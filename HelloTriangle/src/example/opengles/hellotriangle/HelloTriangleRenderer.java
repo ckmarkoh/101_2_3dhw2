@@ -23,14 +23,15 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 	/** Store our model data in a float buffer. */
 	private final FloatBuffer mTriangle1Vertices;
 	private final FloatBuffer mTriangle2Vertices;
-	//private final FloatBuffer mTriangle3Vertices;
 	
 	private final FloatBuffer mCubePositions;	
 	private final FloatBuffer mCubeNormals;
-	private final FloatBuffer mCubeColors;
+	private final FloatBuffer mCubeColors1;
+	private final FloatBuffer mCubeColors2;
+
+	/** This will be used to pass in model normal information. */
 	private int mNormalHandle;
 
-	
 	/** This will be used to pass in the transformation matrix. */
 	private int mMVPMatrixHandle;
 	
@@ -64,59 +65,53 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 	
 	/** This will be used to pass in the modelview matrix. */
 	private int mMVMatrixHandle;
+	
+	
 
+	/** This is a handle to our per-vertex cube shading program. */
+	private int mPerVertexProgramHandle;
+		
+	/** This is a handle to our light point program. */
+	private int mPointProgramHandle;
+
+	
 	
 	public HelloTriangleRenderer() {
 		// This triangle is red, green, and blue.
 		final float[] triangle1VerticesData = {
 			// X, Y, Z, 
 			// R, G, B, A
-			-0.2f, -0.25f, 0.0f, 
-			1.0f, 0.0f, 0.0f, 1.0f,
+			-0.3f, -0.3f, 0.0f, 
+			1.0f, 0.5f, 0.0f, 1.0f,
 
 			0.2f, -0.2f, 0.0f,
-			0.0f, 0.0f, 1.0f, 1.0f,
+			0.5f, 0.5f, 0.0f, 1.0f,
 			            
-			0.0f, 0.2f, 0.0f, 
-			0.0f, 1.0f, 0.0f, 1.0f
+			0.0f, 0.3f, 0.0f, 
+			0.5f, 1.0f, 0.0f, 1.0f
 		};
 				
 		// This triangle is yellow, cyan, and magenta.
 		final float[] triangle2VerticesData = {
 			// X, Y, Z, 
 			// R, G, B, A
-			-0.2f, -0.25f, 0.0f, 
-			1.0f, 1.0f, 0.0f, 1.0f,
+			-0.3f, -0.3f, 0.0f, 
+			0.0f, 1.0f, 0.5f, 1.0f,
 			            
 			0.2f, -0.2f, 0.0f, 
-			0.0f, 1.0f, 1.0f, 1.0f,
+			0.0f, 0.5f, 0.5f, 1.0f,
 			            
-			0.0f, 0.2f, 0.0f, 
-			1.0f, 0.0f, 1.0f, 1.0f
+			0.0f, 0.3f, 0.0f, 
+			0.0f, 0.5f, 1.0f, 1.0f
 		};
 				
-		// This triangle is white, gray, and black.
-		/*final float[] triangle3VerticesData = {
-			// X, Y, Z, 
-			// R, G, B, A
-			-0.5f, -0.25f, 0.0f, 
-			1.0f, 1.0f, 1.0f, 1.0f,
-			            
-			0.5f, -0.25f, 0.0f, 
-			0.5f, 0.5f, 0.5f, 1.0f,
-			            
-			0.0f, 0.559016994f, 0.0f, 
-			0.0f, 0.0f, 0.0f, 1.0f
-		};*/
 
 		// Initialize the buffers.
 		mTriangle1Vertices = ByteBuffer.allocateDirect(triangle1VerticesData.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
 		mTriangle2Vertices = ByteBuffer.allocateDirect(triangle2VerticesData.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		//mTriangle3Vertices = ByteBuffer.allocateDirect(triangle3VerticesData.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
 
 		mTriangle1Vertices.put(triangle1VerticesData).position(0);
 		mTriangle2Vertices.put(triangle2VerticesData).position(0);
-		//mTriangle3Vertices.put(triangle3VerticesData).position(0);
 		
 		
 		// Define points for a cube.		
@@ -130,56 +125,56 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 			// usually represent the backside of an object and aren't visible anyways.
 						
 			// Front face
-			-1.0f, 1.0f, 1.0f,				
-			-1.0f, -1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 
-			-1.0f, -1.0f, 1.0f, 				
-			1.0f, -1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
+			-0.2f, 0.2f, 0.2f,				
+			-0.2f, -0.2f, 0.2f,
+			0.2f, 0.2f, 0.2f, 
+			-0.2f, -0.2f, 0.2f, 				
+			0.2f, -0.2f, 0.2f,
+			0.2f, 0.2f, 0.2f,
 						
 			// Right face
-			1.0f, 1.0f, 1.0f,				
-			1.0f, -1.0f, 1.0f,
-			1.0f, 1.0f, -1.0f,
-			1.0f, -1.0f, 1.0f,				
-			1.0f, -1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,
+			0.2f, 0.2f, 0.2f,				
+			0.2f, -0.2f, 0.2f,
+			0.2f, 0.2f, -0.2f,
+			0.2f, -0.2f, 0.2f,				
+			0.2f, -0.2f, -0.2f,
+			0.2f, 0.2f, -0.2f,
 					
 			// Back face
-			1.0f, 1.0f, -1.0f,				
-			1.0f, -1.0f, -1.0f,
-			-1.0f, 1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,				
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, 1.0f, -1.0f,
+			0.2f, 0.2f, -0.2f,				
+			0.2f, -0.2f, -0.2f,
+			-0.2f, 0.2f, -0.2f,
+			0.2f, -0.2f, -0.2f,				
+			-0.2f, -0.2f, -0.2f,
+			-0.2f, 0.2f, -0.2f,
 						
 			// Left face
-			-1.0f, 1.0f, -1.0f,				
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, 1.0f, 1.0f, 
-			-1.0f, -1.0f, -1.0f,				
-			-1.0f, -1.0f, 1.0f, 
-			-1.0f, 1.0f, 1.0f, 
+			-0.2f, 0.2f, -0.2f,				
+			-0.2f, -0.2f, -0.2f,
+			-0.2f, 0.2f, 0.2f, 
+			-0.2f, -0.2f, -0.2f,				
+			-0.2f, -0.2f, 0.2f, 
+			-0.2f, 0.2f, 0.2f, 
 				
 			// Top face
-			-1.0f, 1.0f, -1.0f,				
-			-1.0f, 1.0f, 1.0f, 
-			1.0f, 1.0f, -1.0f, 
-			-1.0f, 1.0f, 1.0f, 				
-			1.0f, 1.0f, 1.0f, 
-			1.0f, 1.0f, -1.0f,
+			-0.2f, 0.2f, -0.2f,				
+			-0.2f, 0.2f, 0.2f, 
+			0.2f, 0.2f, -0.2f, 
+			-0.2f, 0.2f, 0.2f, 				
+			0.2f, 0.2f, 0.2f, 
+			0.2f, 0.2f, -0.2f,
 						
 			// Bottom face
-			1.0f, -1.0f, -1.0f,				
-			1.0f, -1.0f, 1.0f, 
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, 1.0f, 				
-			-1.0f, -1.0f, 1.0f,
-			-1.0f, -1.0f, -1.0f,
+			0.2f, -0.2f, -0.2f,				
+			0.2f, -0.2f, 0.2f, 
+			-0.2f, -0.2f, -0.2f,
+			0.2f, -0.2f, 0.2f, 				
+			-0.2f, -0.2f, 0.2f,
+			-0.2f, -0.2f, -0.2f,
 		};	
 				
 		// R, G, B, A
-		final float[] cubeColorData =
+		final float[] cubeColorData1 =
 		{				
 			// Front face (red)
 			1.0f, 0.0f, 0.0f, 1.0f,				
@@ -188,6 +183,58 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 			1.0f, 0.0f, 0.0f, 1.0f,				
 			1.0f, 0.0f, 0.0f, 1.0f,
 			1.0f, 0.0f, 0.0f, 1.0f,
+
+			// Right face (yellow)
+			1.0f, 1.0f, 0.0f, 1.0f,				
+			1.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f,				
+			1.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f,
+					
+			// Back face (red)
+			1.0f, 0.0f, 0.0f, 1.0f,				
+			1.0f, 0.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f,				
+			1.0f, 0.0f, 0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f, 1.0f,
+					
+			// Left face (yellow)
+			1.0f, 1.0f, 0.0f, 1.0f,				
+			1.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f,				
+			1.0f, 1.0f, 0.0f, 1.0f,
+			1.0f, 1.0f, 0.0f, 1.0f,
+			
+			// Top face (magenta)
+			1.0f, 0.0f, 1.0f, 1.0f,				
+			1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, 0.0f, 1.0f, 1.0f,				
+			1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, 0.0f, 1.0f, 1.0f,
+					
+			// Bottom face (magenta)
+			1.0f, 0.0f, 1.0f, 1.0f,				
+			1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, 0.0f, 1.0f, 1.0f,				
+			1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, 0.0f, 1.0f, 1.0f
+		};
+	
+		// R, G, B, A
+		final float[] cubeColorData2 =
+		{				
+			// Front face (blue)
+			0.0f, 0.0f, 1.0f, 1.0f,				
+			0.0f, 0.0f, 1.0f, 1.0f,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			0.0f, 0.0f, 1.0f, 1.0f,				
+			0.0f, 0.0f, 1.0f, 1.0f,
+			0.0f, 0.0f, 1.0f, 1.0f,
 
 			// Right face (green)
 			0.0f, 1.0f, 0.0f, 1.0f,				
@@ -205,13 +252,13 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 			0.0f, 0.0f, 1.0f, 1.0f,
 			0.0f, 0.0f, 1.0f, 1.0f,
 					
-			// Left face (yellow)
-			1.0f, 1.0f, 0.0f, 1.0f,				
-			1.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f,				
-			1.0f, 1.0f, 0.0f, 1.0f,
-			1.0f, 1.0f, 0.0f, 1.0f,
+			// Left face (green)
+			0.0f, 1.0f, 0.0f, 1.0f,				
+			0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 1.0f,				
+			0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 1.0f,
 			
 			// Top face (cyan)
 			0.0f, 1.0f, 1.0f, 1.0f,				
@@ -221,15 +268,15 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 			0.0f, 1.0f, 1.0f, 1.0f,
 			0.0f, 1.0f, 1.0f, 1.0f,
 					
-			// Bottom face (magenta)
-			1.0f, 0.0f, 1.0f, 1.0f,				
-			1.0f, 0.0f, 1.0f, 1.0f,
-			1.0f, 0.0f, 1.0f, 1.0f,
-			1.0f, 0.0f, 1.0f, 1.0f,				
-			1.0f, 0.0f, 1.0f, 1.0f,
-			1.0f, 0.0f, 1.0f, 1.0f
+			// Bottom face (cyan)
+			0.0f, 1.0f, 1.0f, 1.0f,				
+			0.0f, 1.0f, 1.0f, 1.0f,
+			0.0f, 1.0f, 1.0f, 1.0f,
+			0.0f, 1.0f, 1.0f, 1.0f,				
+			0.0f, 1.0f, 1.0f, 1.0f,
+			0.0f, 1.0f, 1.0f, 1.0f,
 		};
-				
+		
 		// X, Y, Z
 		// The normal is used in light calculations and is a vector which points
 		// orthogonal to the plane of the surface. For a cube model, the normals
@@ -289,9 +336,13 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 		mCubePositions = ByteBuffer.allocateDirect(cubePositionData.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();							
 		mCubePositions.put(cubePositionData).position(0);
 
-		mCubeColors = ByteBuffer.allocateDirect(cubeColorData.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();	
-		mCubeColors.put(cubeColorData).position(0);
-				
+		mCubeColors1 = ByteBuffer.allocateDirect(cubeColorData1.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();	
+		mCubeColors1.put(cubeColorData1).position(0);
+	
+		mCubeColors2 = ByteBuffer.allocateDirect(cubeColorData2.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();	
+		mCubeColors2.put(cubeColorData2).position(0);
+
+		
 		mCubeNormals = ByteBuffer.allocateDirect(cubeNormalData.length * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();							
 		mCubeNormals.put(cubeNormalData).position(0);
 		
@@ -300,7 +351,7 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 	@Override
 	public void onSurfaceCreated(GL10 arg0, EGLConfig arg1) {
 		// Set the background clear color to gray.
-		GLES20.glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
+		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 		// Position the eye behind the origin.
 		final float eyeX = 0.0f;
@@ -321,11 +372,15 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 		
 		final String vertexShader =
 			  "uniform mat4 u_MVPMatrix;      \n"		// A constant representing the combined model/view/projection matrix.
-				
+
 			+ "attribute vec4 a_Position;     \n"		// Per-vertex position information we will pass in.
 			+ "attribute vec4 a_Color;        \n"		// Per-vertex color information we will pass in.			  
+			
+			+ "attribute vec3 a_Normal;       \n"		// Per-vertex normal information we will pass in.
 			+ "varying vec4 v_Color;          \n"		// This will be passed into the fragment shader.
-			  
+			
+			+ "varying vec3 v_Normal;         \n"
+
 			+ "void main()                    \n"		// The entry point for our vertex shader.
 			+ "{                              \n"
 			+ "   v_Color = a_Color;          \n"		// Pass the color through to the fragment shader. 
@@ -414,7 +469,8 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 			// Bind attributes
 			GLES20.glBindAttribLocation(programHandle, 0, "a_Position");
 			GLES20.glBindAttribLocation(programHandle, 1, "a_Color");
-				
+			GLES20.glBindAttribLocation(programHandle, 2, "a_Normal");
+
 			// Link the two shaders together into a program.
 			GLES20.glLinkProgram(programHandle);
 
@@ -439,7 +495,9 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 	    mMVPMatrixHandle = GLES20.glGetUniformLocation(programHandle, "u_MVPMatrix");        
 	    mPositionHandle = GLES20.glGetAttribLocation(programHandle, "a_Position");
 	    mColorHandle = GLES20.glGetAttribLocation(programHandle, "a_Color");        
-	        
+        mNormalHandle = GLES20.glGetAttribLocation(programHandle, "a_Normal"); 
+        mMVMatrixHandle = GLES20.glGetUniformLocation(programHandle, "u_MVMatrix"); 
+
 	    // Tell OpenGL to use this program when rendering.
 	    GLES20.glUseProgram(programHandle);
 
@@ -449,6 +507,11 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 	public void onSurfaceChanged(GL10 arg0, int width, int height) {
 		// Set the OpenGL viewport to the same size as the surface.
 		GLES20.glViewport(0, 0, width, height);
+		// Use culling to remove back faces.
+		GLES20.glEnable(GLES20.GL_CULL_FACE);
+				
+		// Enable depth testing
+		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 
 		// Create a new perspective projection matrix. The height will stay the same
 		// while the width will vary as per aspect ratio.
@@ -472,35 +535,32 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         long time = SystemClock.uptimeMillis() % 10000L;
         float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
         
-       // mMVMatrixHandle = GLES20.glGetUniformLocation(mPerVertexProgramHandle, "u_MVMatrix"); 
 
         // Draw the triangle facing straight on.
         Matrix.setIdentityM(mModelMatrix, 0);
-        Matrix.translateM(mModelMatrix, 0, 0.0f, -0.5f, 0.0f);
-
+        Matrix.translateM(mModelMatrix, 0, 0.5f, 0.0f, 0.0f);
         Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 0.0f, 0.0f, 1.0f);        
         drawTriangle(mTriangle1Vertices);
         
         // Draw one translated a bit down and rotated to be flat on the ground.
         Matrix.setIdentityM(mModelMatrix, 0);
-        Matrix.translateM(mModelMatrix, 0, 0.0f, -1.0f, 0.0f);
-        Matrix.rotateM(mModelMatrix, 0, 90.0f, 1.0f, 0.0f, 0.0f);
-        Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 0.0f, 0.0f, 1.0f);        
+        Matrix.translateM(mModelMatrix, 0, 0.5f, 1.0f, 0.0f);
+        Matrix.rotateM(mModelMatrix, 0, -angleInDegrees, 0.0f, 0.0f, 1.0f);        
         drawTriangle(mTriangle2Vertices);
         
         
         Matrix.setIdentityM(mModelMatrix, 0);
-        Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, 0.0f);
+        Matrix.translateM(mModelMatrix, 0, -0.5f, 0.0f, 0.0f);
+        Matrix.rotateM(mModelMatrix, 0, 45.0f,1.0f, 45.0f, 45.0f);
         Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 1.0f, 0.0f, 0.0f);        
-        drawCube();
+        drawCube(mCubeColors1);
 
-        /*// Draw one translated a bit to the right and rotated to be facing to the left.
         Matrix.setIdentityM(mModelMatrix, 0);
-        Matrix.translateM(mModelMatrix, 0, 0.5f, 1.0f, 0.0f);
-        Matrix.rotateM(mModelMatrix, 0, 90.0f, 0.0f, 1.0f, 0.0f);
-        Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 0.0f, 0.0f, 1.0f);
-        drawTriangle(mTriangle3Vertices);*/
-        
+        Matrix.translateM(mModelMatrix, 0, -0.5f, 1.0f, 0.0f);
+        Matrix.rotateM(mModelMatrix, 0, 45.0f,1.0f, 45.0f, 135.0f);
+        Matrix.rotateM(mModelMatrix, 0, -angleInDegrees, 1.0f, 0.0f, 0.0f);        
+        drawCube(mCubeColors2);
+ 
 	}
 
 	private void drawTriangle(final FloatBuffer aTriangleBuffer)
@@ -531,7 +591,7 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3);                               
 	}
 
-	private void drawCube()
+	private void drawCube(final FloatBuffer mCubeColors)
 	{		
 		// Pass in the position information
 		mCubePositions.position(0);		
